@@ -85,13 +85,13 @@ const App = () => {
     ]
   });
 
-  // --- WETLAND EARNINGS STATE (New) ---
+  // --- WETLAND EARNINGS STATE (Converted to Rupees) ---
   const [wetlandStats, setWetlandStats] = useState({
-    totalEarnings: 1250.00,
-    pendingPayout: 45.50,
+    totalEarnings: 105000.00, // Approx ₹1.05 Lakh
+    pendingPayout: 3800.00,
     dailyLogs: [
-      { date: '2023-10-26', project: 'Mangrove Alpha', amount: 1.2, reward: 18.00 },
-      { date: '2023-10-27', project: 'Mangrove Alpha', amount: 1.1, reward: 16.50 }
+      { date: '2023-10-26', project: 'Mangrove Alpha', amount: 1.2, reward: 1440.00 },
+      { date: '2023-10-27', project: 'Mangrove Alpha', amount: 1.1, reward: 1320.00 }
     ]
   });
 
@@ -212,7 +212,7 @@ const App = () => {
   );
 };
 
-// --- WETLAND DASHBOARD (UPDATED WITH REWARDS) ---
+// --- WETLAND DASHBOARD (INR UPDATED) ---
 const WetlandDashboard = ({ wallet, user, projects, setProjects, stats, setStats }) => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [newProject, setNewProject] = useState({ name: '', location: '', hectares: '', rate: '', period: '', evidenceLink: '' });
@@ -220,7 +220,9 @@ const WetlandDashboard = ({ wallet, user, projects, setProjects, stats, setStats
   // Daily Log State
   const [selectedProject, setSelectedProject] = useState('');
   const [dailyAmount, setDailyAmount] = useState('');
-  const CARBON_PRICE_PER_TON = 15; // $15 Reward per ton
+  
+  // REWARD RATE: ₹1200 per Ton
+  const CARBON_REWARD_PER_TON = 1200; 
 
   // Add New Project Logic
   const handleAddProject = (e) => {
@@ -248,7 +250,7 @@ const WetlandDashboard = ({ wallet, user, projects, setProjects, stats, setStats
     if(!selectedProject || !dailyAmount) return;
 
     const amount = parseFloat(dailyAmount);
-    const reward = amount * CARBON_PRICE_PER_TON;
+    const reward = amount * CARBON_REWARD_PER_TON;
     
     const newLog = {
       date: new Date().toISOString().split('T')[0],
@@ -265,12 +267,12 @@ const WetlandDashboard = ({ wallet, user, projects, setProjects, stats, setStats
     }));
 
     setDailyAmount('');
-    alert(`Submitted! You earned $${reward.toFixed(2)} for absorbing ${amount} tons.`);
+    alert(`Submitted! You earned ₹${reward.toLocaleString()} for absorbing ${amount} tons.`);
   };
 
   const handleWithdraw = () => {
     if(stats.pendingPayout <= 0) return;
-    const confirm = window.confirm(`Withdraw $${stats.pendingPayout.toFixed(2)} to your connected bank account?`);
+    const confirm = window.confirm(`Withdraw ₹${stats.pendingPayout.toLocaleString()} to your connected bank account?`);
     if(confirm) {
       setStats(prev => ({ ...prev, pendingPayout: 0 }));
       alert("Withdrawal initiated! Funds will arrive in 2-3 business days.");
@@ -302,7 +304,7 @@ const WetlandDashboard = ({ wallet, user, projects, setProjects, stats, setStats
               <span className="text-indigo-100 font-medium">Pending Payout</span>
               <Coins className="w-6 h-6 text-indigo-200" />
             </div>
-            <div className="text-4xl font-bold mb-2">${stats.pendingPayout.toFixed(2)}</div>
+            <div className="text-4xl font-bold mb-2">₹{stats.pendingPayout.toLocaleString()}</div>
             <button 
               onClick={handleWithdraw}
               disabled={stats.pendingPayout <= 0}
@@ -320,8 +322,8 @@ const WetlandDashboard = ({ wallet, user, projects, setProjects, stats, setStats
             <span className="text-slate-500 font-medium">Lifetime Earnings</span>
             <TrendingUp className="w-6 h-6 text-green-600" />
           </div>
-          <div className="text-4xl font-bold text-slate-800">${stats.totalEarnings.toFixed(2)}</div>
-          <div className="text-sm text-green-600 mt-1 font-medium">+ $15.00 / Ton Reward Rate</div>
+          <div className="text-4xl font-bold text-slate-800">₹{stats.totalEarnings.toLocaleString()}</div>
+          <div className="text-sm text-green-600 mt-1 font-medium">+ ₹1,200 / Ton Reward Rate</div>
         </div>
 
         {/* Carbon Stats */}
@@ -378,7 +380,7 @@ const WetlandDashboard = ({ wallet, user, projects, setProjects, stats, setStats
 
             <div className="bg-indigo-50 p-3 rounded text-sm text-indigo-800 font-bold flex justify-between">
                <span>Estimated Reward:</span>
-               <span>${(dailyAmount * CARBON_PRICE_PER_TON).toFixed(2) || '0.00'}</span>
+               <span>₹{(dailyAmount * CARBON_REWARD_PER_TON).toLocaleString() || '0'}</span>
             </div>
 
             <button 
@@ -404,7 +406,7 @@ const WetlandDashboard = ({ wallet, user, projects, setProjects, stats, setStats
                    <div className="text-xs text-slate-500 font-mono">{log.date} • {log.amount} tons</div>
                  </div>
                  <div className="font-bold text-green-600 font-mono bg-green-50 px-2 py-1 rounded border border-green-100">
-                   +${log.reward.toFixed(2)}
+                   +₹{log.reward.toLocaleString()}
                  </div>
                </div>
              ))}
@@ -480,7 +482,7 @@ const WetlandDashboard = ({ wallet, user, projects, setProjects, stats, setStats
   );
 };
 
-// --- INDUSTRY DASHBOARD (RAZORPAY INTEGRATED) ---
+// --- INDUSTRY DASHBOARD (INR UPDATED) ---
 const IndustryDashboard = ({ wallet, user, stats, setStats }) => {
   const [todaysEmission, setTodaysEmission] = useState('');
   const [showMarketplace, setShowMarketplace] = useState(false);
@@ -504,9 +506,10 @@ const IndustryDashboard = ({ wallet, user, stats, setStats }) => {
   const handleBuyCredits = async (pack) => {
     const res = await loadRazorpay();
     if (!res) { alert('Razorpay SDK failed to load. Are you online?'); return; }
+    
     const options = {
       key: "rzp_test_YOUR_KEY_HERE", 
-      amount: pack.price * 100,
+      amount: pack.price * 100, // paise
       currency: "INR",
       name: "Carbon Connect",
       description: `Purchase ${pack.amount} Carbon Credits`,
@@ -543,7 +546,7 @@ const IndustryDashboard = ({ wallet, user, stats, setStats }) => {
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6"><h3 className="text-xl font-bold mb-4 flex items-center"><Calendar className="mr-2 text-slate-500" /> Log Daily Output</h3><form onSubmit={handleLogEmission} className="space-y-4"><div className="bg-blue-50 p-4 rounded-lg flex items-start"><TrendingUp className="w-5 h-5 text-blue-600 mr-3 mt-0.5" /><div><p className="text-sm font-bold text-blue-800">Benchmark Insight</p><p className="text-xs text-blue-600">Average daily emission for an industry of your size is approx <strong>{INDUSTRY_DAILY_AVG} tons</strong>.</p></div></div><div><label className="block text-sm font-medium text-slate-700 mb-1">Today's Production (Tons CO2)</label><div className="relative"><input type="number" step="0.1" required value={todaysEmission} onChange={(e) => setTodaysEmission(e.target.value)} className="w-full border border-slate-300 rounded-lg pl-4 pr-12 py-3 focus:ring-2 focus:ring-teal-500 outline-none font-mono text-lg" placeholder="0.00" /><span className="absolute right-4 top-3.5 text-slate-400 text-sm font-bold">TONS</span></div></div><button type="submit" className="w-full bg-slate-900 text-white py-3 rounded-lg font-bold hover:bg-slate-800 transition flex justify-center items-center"><Plus className="w-4 h-4 mr-2" /> Update Tracker</button></form></div>
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 overflow-hidden"><h3 className="text-xl font-bold mb-4">Recent Logs</h3><div className="overflow-y-auto max-h-[250px] space-y-3">{[...stats.dailyLogs].reverse().map((log, i) => (<div key={i} className="flex justify-between items-center p-3 bg-slate-50 rounded-lg border border-slate-100"><span className="text-slate-600 font-mono text-sm">{log.date}</span><div className="flex items-center"><span className={`font-bold ${log.amount > INDUSTRY_DAILY_AVG ? 'text-red-600' : 'text-green-600'}`}>{log.amount} t</span>{log.amount > INDUSTRY_DAILY_AVG && <AlertCircle className="w-3 h-3 text-red-400 ml-2" />}</div></div>))}</div></div>
       </div>
-      {showMarketplace && (<div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"><div className="bg-white rounded-2xl max-w-3xl w-full p-0 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"><div className="bg-slate-900 p-6 text-white flex justify-between items-center"><div><h2 className="text-2xl font-bold flex items-center"><Globe className="mr-2" /> Carbon Marketplace</h2><p className="text-slate-400 text-sm">Securely purchase verified credits via Razorpay.</p></div><button onClick={() => setShowMarketplace(false)} className="bg-white/10 p-2 rounded-full hover:bg-white/20 transition"><X className="w-5 h-5" /></button></div><div className="p-8"><div className="grid md:grid-cols-3 gap-6">{[{ amount: 10, price: 1500, label: "Starter Pack" }, { amount: 50, price: 7000, label: "Factory Standard", best: true }, { amount: 100, price: 13500, label: "Enterprise" }].map((pack, i) => (<div key={i} className={`border rounded-xl p-6 text-center relative hover:border-teal-500 hover:shadow-lg transition cursor-pointer group ${pack.best ? 'border-teal-500 bg-teal-50/30' : 'border-slate-200'}`}>{pack.best && <span className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-teal-600 text-white text-[10px] font-bold px-2 py-1 rounded-full uppercase">Best Value</span>}<h4 className="text-slate-500 font-medium uppercase text-xs mb-2">{pack.label}</h4><div className="text-3xl font-bold text-slate-900 mb-1">{pack.amount} <span className="text-sm font-normal">Credits</span></div><div className="text-xl font-bold text-teal-600 mb-6">₹{pack.price}</div><button onClick={() => handleBuyCredits(pack)} className="w-full py-2 rounded-lg border border-slate-300 font-bold text-slate-700 group-hover:bg-teal-600 group-hover:text-white group-hover:border-teal-600 transition">Purchase</button></div>))}</div><div className="mt-8 flex items-center justify-center text-slate-400 text-sm bg-slate-50 p-4 rounded-xl"><Lock className="w-4 h-4 mr-2" /><span>Payments processed securely via <strong>Razorpay</strong></span><div className="ml-4 flex gap-2"><CreditCard className="w-5 h-5" /><DollarSign className="w-5 h-5" /></div></div></div></div></div>)}
+      {showMarketplace && (<div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"><div className="bg-white rounded-2xl max-w-3xl w-full p-0 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"><div className="bg-slate-900 p-6 text-white flex justify-between items-center"><div><h2 className="text-2xl font-bold flex items-center"><Globe className="mr-2" /> Carbon Marketplace</h2><p className="text-slate-400 text-sm">Securely purchase verified credits via Razorpay.</p></div><button onClick={() => setShowMarketplace(false)} className="bg-white/10 p-2 rounded-full hover:bg-white/20 transition"><X className="w-5 h-5" /></button></div><div className="p-8"><div className="grid md:grid-cols-3 gap-6">{[{ amount: 10, price: 15000, label: "Starter Pack" }, { amount: 50, price: 70000, label: "Factory Standard", best: true }, { amount: 100, price: 135000, label: "Enterprise" }].map((pack, i) => (<div key={i} className={`border rounded-xl p-6 text-center relative hover:border-teal-500 hover:shadow-lg transition cursor-pointer group ${pack.best ? 'border-teal-500 bg-teal-50/30' : 'border-slate-200'}`}>{pack.best && <span className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-teal-600 text-white text-[10px] font-bold px-2 py-1 rounded-full uppercase">Best Value</span>}<h4 className="text-slate-500 font-medium uppercase text-xs mb-2">{pack.label}</h4><div className="text-3xl font-bold text-slate-900 mb-1">{pack.amount} <span className="text-sm font-normal">Credits</span></div><div className="text-xl font-bold text-teal-600 mb-6">₹{pack.price.toLocaleString()}</div><button onClick={() => handleBuyCredits(pack)} className="w-full py-2 rounded-lg border border-slate-300 font-bold text-slate-700 group-hover:bg-teal-600 group-hover:text-white group-hover:border-teal-600 transition">Purchase</button></div>))}</div><div className="mt-8 flex items-center justify-center text-slate-400 text-sm bg-slate-50 p-4 rounded-xl"><Lock className="w-4 h-4 mr-2" /><span>Payments processed securely via <strong>Razorpay</strong></span><div className="ml-4 flex gap-2"><CreditCard className="w-5 h-5" /><DollarSign className="w-5 h-5" /></div></div></div></div></div>)}
     </div>
   );
 };
@@ -565,7 +568,7 @@ const GovernmentView = () => (
   <div className="max-w-7xl mx-auto px-4 py-8"><h2 className="text-3xl font-bold text-slate-900 mb-2">Government Oversight</h2><p className="text-slate-500 mb-8">Public Ledger Monitoring</p><div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden"><div className="bg-slate-50 px-6 py-4 border-b border-slate-200"><h3 className="font-bold text-slate-700 flex items-center"><ArrowRightLeft className="mr-2 h-4 w-4" /> Recent Transactions</h3></div><div className="p-6 text-center text-slate-500">Live ledger transactions would appear here.</div></div></div>
 );
 
-// --- LANDING PAGE (FIXED) ---
+// --- LANDING PAGE ---
 const LandingPage = ({ setView }) => (
   <div className="animate-in fade-in duration-500">
     <div className="bg-teal-900 text-white py-20 text-center">
